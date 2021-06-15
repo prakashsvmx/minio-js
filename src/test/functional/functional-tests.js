@@ -20,6 +20,7 @@ const crypto = require('crypto')
 const async = require('async')
 const _ = require('lodash')
 const fs = require('fs')
+const fse = require('fs-extra')
 const http = require('http')
 const https = require('https')
 const url = require('url')
@@ -27,8 +28,10 @@ const chai = require('chai')
 const assert = chai.assert
 const superagent = require('superagent')
 const uuid = require("uuid")
+const splitFile = require('split-file')
 const step = require("mocha-steps").step
-import { getVersionId, isArray } from "../../../dist/main/helpers"
+
+import { getVersionId, isArray, CopyDestinationOptions, CopySourceOptions } from "../../../dist/main/helpers"
 let minio
 
 try {
@@ -1853,8 +1856,7 @@ describe('functional tests', function() {
 
 
   describe('Versioning Supported preSignedUrl Get, Put Tests', function() {
-    /**
-         * Test Steps
+    /* Test Steps
          * 1. Create Versioned Bucket
          * 2. presignedPutObject of 2 Versions of different size
          * 3. List and ensure that there are two versions
@@ -2490,4 +2492,135 @@ describe('functional tests', function() {
       })
 
     })})
+
+  describe("Compose Object API Tests", ()=>{
+    /**
+       * Steps:
+       * 1. Generate a 100MB file in temp dir
+       * 2. Split into 26 MB parts in temp dir
+       * 3. Upload parts to bucket
+       * 4. Compose into a single object in the same bucket.
+       * 5. Remove the file parts (Clean up)
+       * 6. Remove the file itself (Clean up)
+       * 7. Remove bucket. (Clean up)
+       * @type {string}
+       */
+
+    var _100mbFileToBeSplitAndComposed = Buffer.alloc(100 * 1024 * 1024, 0)
+    let composeObjectTestBucket = "minio-js-test-compose-obj-" + uuid.v4()
+    before((done) => client.makeBucket(composeObjectTestBucket, '', done))
+    after((done) => client.removeBucket(composeObjectTestBucket, done))
+
+    const composedObjName = '_100-mb-file-to-test-compose'
+    const tmpSubDir =  `${tmpDir}/compose`
+    var fileToSplit = `${tmpSubDir}/${composedObjName}`
+    let partFilesNamesWithPath = []
+    let partObjNameList = []
+    let isSplitSuccess = false
+    step(`Create a local file of 100 MB and split `, done => {
+      try {
+        fs.writeFileSync(fileToSplit, _100mbFileToBeSplitAndComposed)
+        //100 MB split into 26 MB part size.
+        splitFile.splitFileBySize(fileToSplit, (26*1024*1024))
+          .then((names) => {
+            partFilesNamesWithPath= names
+            isSplitSuccess = true
+            done()
+          })
+          .catch(() => {
+            done()
+          })
+      }catch (err){
+        done()
+      }
+    })
+      
+      
+    step(`Upload parts to Bucket_bucketName:${composeObjectTestBucket}, objectName:${partObjNameList}`, (done)=>{
+          
+      if(isSplitSuccess){
+
+        const fileSysToBucket = partFilesNamesWithPath.map((partFileName)=>{
+          const partObjName =partFileName.substr((tmpSubDir+"/").length)
+          partObjNameList.push(partObjName)
+          return client.fPutObject(composeObjectTestBucket, partObjName, partFileName, {})
+        })
+
+        Promise.all(fileSysToBucket).then(()=>{
+          done()
+        }).catch(done)
+         
+          
+      }else{
+        done()
+      }
+    })
+
+    step(`composeObject(destObjConfig, sourceObjList, cb)::_bucketName:${composeObjectTestBucket}, objectName:${composedObjName}_`, (done)=>{
+
+      if(isSplitSuccess) {
+        const sourcePartObjList = partObjNameList.map((partObjName) => {
+          return new CopySourceOptions({
+            Bucket: composeObjectTestBucket,
+            Object: partObjName
+          })
+        })
+
+        const destObjConfig = new CopyDestinationOptions({
+          Bucket: composeObjectTestBucket,
+          Object: composedObjName
+        })
+
+        client.composeObject(destObjConfig, sourcePartObjList).then(() => {
+          done()
+        }).catch(done)
+      }else{
+        done()
+      }
+    })
+
+    step(`statObject(bucketName, objectName, cb)::_bucketName:${composeObjectTestBucket}, objectName:${composedObjName}_`, done => {
+      if(isSplitSuccess) {
+        client.statObject(composeObjectTestBucket, composedObjName, (e) => {
+          if (e) return done(e)
+          done()
+        })  }else{
+        done()
+      }
+    })
+
+
+
+    step(`Remove Object Parts from Bucket::_bucketName:${composeObjectTestBucket}, objectNames:${partObjNameList}`, (done)=>{
+      if(isSplitSuccess) {
+        const sourcePartObjList = partObjNameList.map((partObjName) => {
+          return  client.removeObject(composeObjectTestBucket, partObjName)
+        })
+        
+        Promise.all(sourcePartObjList).then(()=>{
+          done()
+        }).catch(done)
+
+      }else{
+        done()
+      }
+    })
+
+    step(`Remove Composed target Object::_bucketName:${composeObjectTestBucket}, objectName:${composedObjName}`, (done)=>{
+      if(isSplitSuccess) {
+        client.removeObject(composeObjectTestBucket, composedObjName).then(()=>{
+          done()
+        }) }else{
+        done()
+      }
+    })
+
+    step("Clean up temp directory part files", (done)=>{
+      if(isSplitSuccess) {
+        fse.emptyDirSync(tmpSubDir)
+      }
+      done()
+    })
+
+  })  
 })

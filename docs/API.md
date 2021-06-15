@@ -1674,6 +1674,58 @@ minioClient.setObjectLegalHold('bucketName', 'objectName', { Status:"ON", versio
 })
 ```
 
+
+<a name="composeObject"></a>
+### composeObject(destObjConfig, sourceObjectList [, callback])
+
+Compose an object from parts
+
+__Parameters__
+
+
+| Param  |  Type | Description  |
+|---|---|---|
+| `destObjConfig`  |_object_   | Destination Object configuration of the type.[CopyDestinationOptions](https://github.com/minio/minio-js/blob/master/src/helpers.js)  |
+| `sourceObjectList`  | _object[]_  | Array of  object(parts) source to compose into an object. Each part configuration should be of type [CopySourceOptions](https://github.com/minio/minio-js/blob/master/src/helpers.js) |
+| `callback(err)`  | _function_  |Callback function is called with non `null` value in case of error. If no callback is passed, a `Promise` is returned.  |
+
+
+__Example 1__
+
+Compose an Object from its parts ( split multiple parts).
+
+```js
+const sourceList = [new Helpers.CopySourceOptions( {
+    Bucket:     "source-bucket",
+    Object:     "partaa",
+}),new Helpers.CopySourceOptions({
+    Bucket:     "source-bucket",
+    Object:     "partab",
+}),new Helpers.CopySourceOptions({
+    Bucket:     "source-bucket",
+    Object:     "partac",
+
+}),new Helpers.CopySourceOptions({
+    Bucket:     "source-bucket",
+    Object:     "partad",
+})]
+
+const destOption = new Helpers.CopyDestinationOptions({
+    Bucket:     "dest-bucket",
+    Object:     "100MB.zip"
+})
+
+//using Promise style.
+const composePromise = minioClient.composeObject(destOption,sourceList)
+    composePromise.then((result) => {
+        console.log("Success...")
+    })
+    .catch((e)=>{
+        console.log("error",e)
+    })
+
+```
+
 ## 4. Presigned operations
 
 Presigned URLs are generated for temporary download/upload access to private objects.
