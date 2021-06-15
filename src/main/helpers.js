@@ -16,7 +16,8 @@
 
 import stream from 'stream'
 import mime from 'mime-types'
-
+const fs = require('fs')
+const path = require("path")
 import _ from 'lodash'
 import * as errors from './errors.js'
 import querystring from "querystring"
@@ -682,3 +683,21 @@ export function calculateEvenSplits(size , objInfo)  {
 
 }
 
+
+
+export function removeDirAndFiles(dirPath, removeSelf) {
+  if (removeSelf === undefined)
+    removeSelf = true
+  try { var files = fs.readdirSync(dirPath) }
+  catch(e) { return }
+  if (files.length > 0)
+    for (var i = 0; i < files.length; i++) {
+      var filePath = path.join(dirPath, files[i])
+      if (fs.statSync(filePath).isFile())
+        fs.unlinkSync(filePath)
+      else
+        removeDirAndFiles(filePath)
+    }
+  if (removeSelf)
+    fs.rmdirSync(dirPath)
+}

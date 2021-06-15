@@ -20,7 +20,6 @@ const crypto = require('crypto')
 const async = require('async')
 const _ = require('lodash')
 const fs = require('fs')
-const fse = require('fs-extra')
 const http = require('http')
 const https = require('https')
 const url = require('url')
@@ -30,8 +29,14 @@ const superagent = require('superagent')
 const uuid = require("uuid")
 const splitFile = require('split-file')
 const step = require("mocha-steps").step
+import { 
+  getVersionId,
+  isArray,
+  CopyDestinationOptions, 
+  CopySourceOptions,
+  removeDirAndFiles
+} from "../../../dist/main/helpers"
 
-import { getVersionId, isArray, CopyDestinationOptions, CopySourceOptions } from "../../../dist/main/helpers"
 let minio
 
 try {
@@ -2617,7 +2622,7 @@ describe('functional tests', function() {
 
     step("Clean up temp directory part files", (done)=>{
       if(isSplitSuccess) {
-        fse.emptyDirSync(tmpSubDir)
+        removeDirAndFiles(tmpSubDir)
       }
       done()
     })
