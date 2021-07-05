@@ -48,7 +48,7 @@ var s3Client = new Minio.Client({
 | [`getBucketEncryption`](#getBucketEncryption)     | [`setObjectLegalHold`](#setObjectLegalHold) |
 | [`getObjectLockConfig`](#getObjectLockConfig)    |   [`getObjectLegalHold`](#getObjectLegalHold) |
 | [`getBucketEncryption`](#getBucketEncryption)     | [`setObjectLegalHold`](#setObjectLegalHold) |
-| [`setBucketEncryption`](#setBucketEncryption)     |   |
+| [`setBucketEncryption`](#setBucketEncryption)     | [`selectObjectContent`](#selectObjectContent) |
 | [`removeBucketEncryption`](#removeBucketEncryption)  |    |
 | [`setBucketReplication`](#setBucketReplication)|  |
 | [`getBucketReplication`](#getBucketReplication)|   |
@@ -1673,6 +1673,45 @@ minioClient.setObjectLegalHold('bucketName', 'objectName', { Status:"ON", versio
   console.log('Success')
 })
 ```
+
+<a name="selectObjectContent"></a>
+### selectObjectContent(bucketName, objectName, selOpts[, callback])
+
+Select contents of an object (S3 Select).
+
+__Parameters__
+
+| Param  |  Type | Description  |
+|---|---|---|
+| `bucketName`  |_string_   | Name of the bucket.  |
+| `objectName`  | _string_  | Name of the object.  |
+| `selOpts`  | _object_  |  |
+| `callback(err)`  | _function_  |Callback function is called with non `null` value in case of error. If no callback is passed, a `Promise` is returned, with the `SelectResults` type |
+
+__Example 1__
+Select all values
+```js
+const selectRequestConfig = {
+    expression:"SELECT * FROM s3object s where s.\"Name\" = 'Jane'",
+    expressionType:"SQL",
+    inputSerialization : {'CSV': {"FileHeaderInfo": "Use",
+            RecordDelimiter: "\n",
+            FieldDelimiter:  ",",
+        },
+        'CompressionType': 'NONE'},
+    outputSerialization : {'CSV': {RecordDelimiter: "\n",
+            FieldDelimiter:  ",",}},
+    requestProgress:{Enabled:true},
+}
+
+minioClient.selectObjectContent('bucketName', 'objectName', selectRequestConfig, function(err, res) {
+  if (err) {
+    return console.log('Unable to process select object content.', err.message)
+  }
+  console.log('Success')
+})
+```
+
 
 ## 4. Presigned operations
 

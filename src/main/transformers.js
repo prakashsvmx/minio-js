@@ -245,3 +245,6 @@ export function  replicationConfigTransformer(){
 export function  objectLegalHoldTransformer(){
   return getConcater(xmlParsers.parseObjectLegalHoldConfig)
 }
+export function  selectObjectContentTransformer(){
+  return  getConcater()
+}
