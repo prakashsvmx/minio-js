@@ -70,6 +70,13 @@ describe('functional tests', function() {
   } else {
     playConfig.useSSL = true
   }
+  playConfig={
+    useSSL:false,
+    endPoint:"localhost",
+    port:9000,
+    accessKey:"minio",
+    secretKey:"minio123"
+  }
   // dataDir is falsy if we need to generate data on the fly. Otherwise, it will be
   // a directory with files to read from, i.e. /mint/data.
   var dataDir = process.env['MINT_DATA_DIR']
@@ -1335,7 +1342,7 @@ describe('functional tests', function() {
   describe('Versioning tests on a buckets', function () {
     //Isolate the bucket/object for easy debugging and tracking.
     const  versionedBucketName = "minio-js-test-version-" + uuid.v4()
-    const versioned_100kbObjectName = 'datafile-versioned-100-kB'
+    const versioned_100kbObjectName = 'datafile-100-kB'
     const versioned_100kb_Object = dataDir ? fs.readFileSync(dataDir + '/' + versioned_100kbObjectName) : Buffer.alloc(100 * 1024, 0)
 
     before((done) => client.makeBucket(versionedBucketName, '', done))
@@ -1385,7 +1392,7 @@ describe('functional tests', function() {
   describe('Versioning tests on a buckets: getObject, fGetObject, getPartialObject, putObject, removeObject with versionId support', function () {
     //Isolate the bucket/object for easy debugging and tracking.
     const  versionedBucketName = "minio-js-test-version-" + uuid.v4()
-    const versioned_100kbObjectName = 'datafile-versioned-100-kB'
+    const versioned_100kbObjectName = 'datafile-100-kB'
     const versioned_100kb_Object = dataDir ? fs.readFileSync(dataDir + '/' + versioned_100kbObjectName) : Buffer.alloc(100 * 1024, 0)
 
     before((done) => client.makeBucket(versionedBucketName, '', done))
@@ -1482,7 +1489,7 @@ describe('functional tests', function() {
   describe('Versioning Supported listObjects', function() {
     const  versionedBucketName = "minio-js-test-version-list" + uuid.v4()
     const prefixName  = "Prefix1"
-    const versionedObjectName ="datafile-versioned-list-100-kB"
+    const versionedObjectName ="datafile-100-kB"
     const objVersionIdCounter = [1,2,3,4,5]// This should track adding 5 versions of the same object.
     let listObjectsNum = objVersionIdCounter.length
     let objArray = []
@@ -1574,7 +1581,7 @@ describe('functional tests', function() {
   describe('Versioning tests on a bucket for Deletion of Multiple versions', function () {
     //Isolate the bucket/object for easy debugging and tracking.
     const  versionedBucketName = "minio-js-test-version-" + uuid.v4()
-    const versioned_100kbObjectName = 'datafile-versioned-100-kB'
+    const versioned_100kbObjectName = 'datafile-100-kB'
     const versioned_100kb_Object = dataDir ? fs.readFileSync(dataDir + '/' + versioned_100kbObjectName) : Buffer.alloc(100 * 1024, 0)
 
     before((done) => client.makeBucket(versionedBucketName, '', done))
@@ -1692,7 +1699,7 @@ describe('functional tests', function() {
     after((done) => client.removeBucket(tagsBucketName, done))
 
 
-    const tagObjName = 'datafile-tags-100-kB'
+    const tagObjName = 'datafile-100-kB'
     const tagObject = Buffer.alloc(100 * 1024, 0)
 
 
@@ -1742,7 +1749,7 @@ describe('functional tests', function() {
     after((done) => client.removeBucket(tagsVersionedBucketName, done))
 
 
-    const tagObjName = 'datafile-versioned-100-kB'
+    const tagObjName = 'datafile-100-kB'
     const tagObject = Buffer.alloc(100 * 1024, 0)
     let isVersioningSupported=false
     let versionId=null
@@ -2264,7 +2271,7 @@ describe('functional tests', function() {
     after((done) => client.removeBucket(encBucketName, done))
 
 
-    const encObjName = 'datafile-to-encrypt-100-kB'
+    const encObjName = 'datafile-100-kB'
     const encObjFileContent = Buffer.alloc(100 * 1024, 0)
     let isEncryptionSupported = false
 
